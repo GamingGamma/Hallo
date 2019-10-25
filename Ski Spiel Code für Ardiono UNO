@@ -1,0 +1,81 @@
+#define joyX A0 //X Achse des Joysticks am analogen PIN A0.
+#define joyY A1 //Y Achse des Joysticks am analogen PIN A1.
+const int SW_pin = 2;
+const int Y_pin = 1;
+const int X_pin = 0;
+int val = 0;         //?
+char poles[] = "!                  !";//"Zaun"
+long now = 1000;   //?
+int newMove = 0;  //für unerwartete Zaun Bewegung
+int oldMove = 0; // alte Position
+int direct = 0; //?
+int steps = 0; //+1 wenn nach rechts.... -1 wenn nach links
+int ski = 8;  //Position
+long sTime = 0;
+long howLong = 0; //Zeit
+long skiSpeed;    //?
+int xPosition = 0;
+int yPosition = 0;
+int xPin = A0;
+int yPin = A1;
+  
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(xPin, INPUT);
+  pinMode(yPin, INPUT);
+}
+
+void loop() {
+  
+  newMove = random(5, 40); // Zufällige Zaun Bewegung
+  steps = abs(newMove - oldMove) / (newMove - oldMove); //position von 0 ändern (oldMove= 0)
+  while (oldMove != newMove) { //wenn alte position ungelich neue position dann
+    oldMove = oldMove + steps; //alte Position + schritte
+    for (int k = 0; k < oldMove; k++) { // alte position +1
+      Serial.print(" ");
+    }
+    //poles(Zaun) zurücksetzten
+    poles[ski] = ' ';
+    poles[ski + 1] = ' ';
+    ski = ski - steps;
+    xPosition = analogRead(xPin);
+  yPosition = analogRead(yPin);
+
+//Serial.println(xPosition);
+    //Wenn der Y Wert gleich 0 ist dann wurde der Joystick nach rechts gedrückt.
+    if (xPosition > 600) {
+      ski = ski + 1;
+    } else if (xPosition < 400) { //Wenn der Y Wert größer als 670 ist dann wurde der Joystick nach links gedrückt.
+      ski = ski - 1;
+    }
+
+    ski = constrain(ski, 1, 16);
+    poles[ski] = '|';   //Bleibt so
+    poles[ski + 1] = '|'; //muss imemer +1 gehen
+    Serial.println(poles);  //Ausgabe Zaun
+    howLong = (millis() - sTime) / 1000;
+    skiSpeed = map(howLong, 0, 20, 200, 50); //?
+    delay(skiSpeed); //wie schnell es weiter geht?
+
+    if (ski == 1 || ski == 16) { //kollabiert = ENDE
+      Serial.println("    BANG !!!!!");
+      Serial.print("   Du bist für ");
+      Serial.print(howLong); // Ausgabe der Zeit
+      Serial.println(" Sekunden gefahren"); //Ausgabe der Sekunden
+      int sec = 4;
+      while (sec > 0) {
+        Serial.print("   Start in "); //Ausgabe für den Neustart
+        Serial.print(sec);
+        Serial.println("...");
+        delay(1000);
+        sec = sec - 1; //für den Neustart
+      }
+
+      poles[ski] = ' ';
+      poles[ski + 1] = ' ';
+      ski = 8;
+      sTime = millis(); //Zeit 0
+    }
+  }
+}
